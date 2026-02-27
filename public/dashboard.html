@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FormFit Custom — Dashboard</title>
+  <style>
+    :root {
+      --forge-orange: #ff5c00;
+      --void-black: #0a0a0a;
+      --card-bg: #151515;
+      --border: #2a2a2a;
+      --text: #e0e0e0;
+      --text-muted: #888;
+      --green: #22c55e;
+      --blue: #3b82f6;
+      --red: #ef4444;
+      --orange: #f97316;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+      background: var(--void-black);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 2px solid var(--forge-orange);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 20px;
+      color: var(--forge-orange);
+      font-weight: 700;
+    }
+
+    header .subtitle {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 16px 24px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .stat-card .label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--forge-orange);
+      margin-top: 4px;
+    }
+
+    .container { padding: 0 24px 24px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th {
+      background: #1a1a1a;
+      text-align: left;
+      padding: 12px 14px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 10px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:hover { background: #1c1c1c; cursor: pointer; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-new        { background: var(--orange); color: #000; }
+    .status-confirmed  { background: var(--orange); color: #000; }
+    .status-in-progress { background: var(--blue); color: #fff; }
+    .status-shipped    { background: var(--green); color: #000; }
+    .status-cancelled  { background: var(--red); color: #fff; }
+
+    /* Expanded order detail */
+    .order-detail {
+      display: none;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 12px 0;
+    }
+
+    .order-detail.open { display: block; }
+
+    .order-detail h3 {
+      color: var(--forge-orange);
+      margin-bottom: 12px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 24px;
+      margin-bottom: 16px;
+    }
+
+    .detail-grid .field {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .detail-grid .val {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .photo-preview {
+      max-width: 300px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      margin: 12px 0;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-orange { background: var(--forge-orange); color: #000; }
+    .btn-blue   { background: var(--blue); color: #fff; }
+    .btn-green  { background: var(--green); color: #000; }
+    .btn-red    { background: var(--red); color: #fff; }
+    .btn:hover  { opacity: 0.85; }
+
+    .convo-log {
+      background: #0d0d0d;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 12px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .msg-in  { color: var(--text-muted); }
+    .msg-out { color: var(--forge-orange); }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    .refresh-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .refresh-btn:hover { border-color: var(--forge-orange); color: var(--forge-orange); }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>FormFit Custom</h1>
+      <span class="subtitle">Order Dashboard</span>
+    </div>
+    <button class="refresh-btn" onclick="loadData()">Refresh</button>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="label">Total Orders</div>
+      <div class="value" id="stat-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Pending</div>
+      <div class="value" id="stat-pending">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Revenue (This Month)</div>
+      <div class="value" id="stat-revenue">$0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Total Margin</div>
+      <div class="value" id="stat-margin">$0</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <table id="orders-table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Client</th>
+          <th>Size</th>
+          <th>Material</th>
+          <th>Fulfillment</th>
+          <th>Total</th>
+          <th>Margin</th>
+          <th>Status</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody id="orders-body"></tbody>
+    </table>
+    <div id="empty-state" class="empty-state" style="display:none;">No orders yet. Waiting for messages...</div>
+  </div>
+
+  <script>
+    let expandedOrder = null;
+
+    async function loadData() {
+      try {
+        const [ordersRes, statsRes] = await Promise.all([
+          fetch('/api/orders'),
+          fetch('/api/stats')
+        ]);
+        const orders = await ordersRes.json();
+        const stats  = await statsRes.json();
+
+        document.getElementById('stat-total').textContent = stats.total;
+        document.getElementById('stat-pending').textContent = stats.pending;
+        document.getElementById('stat-revenue').textContent = '$' + stats.revenue.toFixed(2);
+        document.getElementById('stat-margin').textContent = '$' + stats.totalMargin.toFixed(2);
+
+        renderOrders(orders);
+      } catch (err) {
+        console.error('Failed to load data:', err);
+      }
+    }
+
+    function statusClass(status) {
+      const map = {
+        'new': 'status-new',
+        'confirmed': 'status-confirmed',
+        'in-progress': 'status-in-progress',
+        'shipped': 'status-shipped',
+        'cancelled': 'status-cancelled'
+      };
+      return map[status] || 'status-new';
+    }
+
+    function renderOrders(orders) {
+      const tbody = document.getElementById('orders-body');
+      const empty = document.getElementById('empty-state');
+
+      if (orders.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      tbody.innerHTML = orders.map(o => `
+        <tr onclick="toggleDetail('${o.order_id}')">
+          <td><strong>${o.order_id}</strong></td>
+          <td>${o.psid ? o.psid.slice(0, 8) + '...' : '—'}</td>
+          <td>${o.size || '—'}</td>
+          <td>${o.material || '—'}</td>
+          <td>${o.fulfillment_type || '—'}</td>
+          <td>$${(o.total || 0).toFixed(2)}</td>
+          <td>$${(o.margin || 0).toFixed(2)}</td>
+          <td><span class="status-badge ${statusClass(o.status)}">${o.status}</span></td>
+          <td>${o.created_at ? new Date(o.created_at + 'Z').toLocaleDateString() : '—'}</td>
+        </tr>
+        <tr id="detail-row-${o.order_id}" style="display:none;">
+          <td colspan="9" style="padding:0;">
+            <div class="order-detail open" id="detail-${o.order_id}">
+              <h3>Order ${o.order_id}</h3>
+              <div class="detail-grid">
+                <div><span class="field">Client PSID:</span><br><span class="val">${o.psid}</span></div>
+                <div><span class="field">Color:</span><br><span class="val">${o.color || '—'}</span></div>
+                <div><span class="field">Material:</span><br><span class="val">${o.material || '—'}</span></div>
+                <div><span class="field">Size:</span><br><span class="val">${o.size || '—'}</span></div>
+                <div><span class="field">Fulfillment:</span><br><span class="val">${o.fulfillment_type || '—'}</span></div>
+                <div><span class="field">Rush:</span><br><span class="val">${o.rush ? 'Yes' : 'No'}</span></div>
+                <div><span class="field">CAD Design:</span><br><span class="val">${o.cad_design ? 'Yes' : 'No'}</span></div>
+                <div><span class="field">Base Price:</span><br><span class="val">$${(o.base_price || 0).toFixed(2)}</span></div>
+                <div><span class="field">Add-ons:</span><br><span class="val">$${(o.addons_price || 0).toFixed(2)}</span></div>
+                <div><span class="field">Shipping:</span><br><span class="val">$${(o.shipping || 0).toFixed(2)}</span></div>
+                <div><span class="field">Total:</span><br><span class="val" style="color:var(--forge-orange);font-size:18px;">$${(o.total || 0).toFixed(2)}</span></div>
+                <div><span class="field">Margin:</span><br><span class="val" style="color:var(--green);">$${(o.margin || 0).toFixed(2)}</span></div>
+                ${o.craftcloud_cost ? `<div><span class="field">Craftcloud Cost:</span><br><span class="val">$${o.craftcloud_cost.toFixed(2)}</span></div>` : ''}
+              </div>
+              ${o.photo_path ? `<img src="/${o.photo_path}" class="photo-preview" alt="Tool photo">` : ''}
+              <div>
+                ${o.status !== 'shipped' && o.status !== 'cancelled' ? `
+                  <button class="btn btn-blue" onclick="updateStatus(event, '${o.order_id}', 'in-progress')">Mark as Printed</button>
+                  <button class="btn btn-green" onclick="updateStatus(event, '${o.order_id}', 'shipped')">Mark as Shipped</button>
+                  <button class="btn btn-red" onclick="updateStatus(event, '${o.order_id}', 'cancelled')">Cancel</button>
+                ` : ''}
+                ${o.fulfillment_type === 'SELF' ? `
+                  <a class="btn btn-orange" href="https://tooltrace.ai" target="_blank">Open in ToolTrace</a>
+                ` : ''}
+                ${o.fulfillment_type === 'CLOUD' ? `
+                  <button class="btn btn-orange" onclick="sendToCraftcloud(event, '${o.order_id}')">Send to Craftcloud</button>
+                ` : ''}
+              </div>
+              <div class="convo-log" id="convo-${o.order_id}">Loading conversation...</div>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function toggleDetail(orderId) {
+      const row = document.getElementById('detail-row-' + orderId);
+      if (!row) return;
+
+      if (expandedOrder === orderId) {
+        row.style.display = 'none';
+        expandedOrder = null;
+        return;
+      }
+
+      // Close previously open
+      if (expandedOrder) {
+        const prev = document.getElementById('detail-row-' + expandedOrder);
+        if (prev) prev.style.display = 'none';
+      }
+
+      row.style.display = 'table-row';
+      expandedOrder = orderId;
+      loadConversation(orderId);
+    }
+
+    async function loadConversation(orderId) {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/messages`);
+        const msgs = await res.json();
+        const el = document.getElementById('convo-' + orderId);
+        if (msgs.length === 0) {
+          el.innerHTML = '<em>No messages yet</em>';
+          return;
+        }
+        el.innerHTML = msgs.map(m => {
+          const cls = m.direction === 'in' ? 'msg-in' : 'msg-out';
+          const prefix = m.direction === 'in' ? '← ' : '→ ';
+          const time = new Date(m.timestamp + 'Z').toLocaleTimeString();
+          return `<div class="${cls}">${prefix}<strong>${time}</strong> ${escapeHtml(m.text)}</div>`;
+        }).join('');
+      } catch (err) {
+        console.error('Failed to load conversation:', err);
+      }
+    }
+
+    async function updateStatus(event, orderId, status) {
+      event.stopPropagation();
+      try {
+        await fetch(`/api/orders/${orderId}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        loadData();
+      } catch (err) {
+        console.error('Failed to update status:', err);
+      }
+    }
+
+    function sendToCraftcloud(event, orderId) {
+      event.stopPropagation();
+      console.log(`[CRAFTCLOUD] Would send order ${orderId} to Craftcloud API`);
+      // TODO: Integrate real Craftcloud API when key is available
+      alert(`Craftcloud integration pending. Order ${orderId} logged to console.`);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Auto-refresh every 30 seconds
+    loadData();
+    setInterval(loadData, 30000);
+  </script>
+</body>
+</html>
