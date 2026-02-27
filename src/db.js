@@ -50,6 +50,16 @@ function init() {
     );
   `);
 
+  // Add columns for pipeline (idempotent — ignores if already exist)
+  const pipelineCols = [
+    ['stl_path', "TEXT DEFAULT ''"],
+    ['craftcloud_quote_id', "TEXT DEFAULT ''"],
+  ];
+  for (const [col, def] of pipelineCols) {
+    try { db.exec(`ALTER TABLE orders ADD COLUMN ${col} ${def}`); }
+    catch (_) { /* column already exists */ }
+  }
+
   console.log('[DB] Initialized at', DB_PATH);
   return db;
 }
@@ -92,7 +102,7 @@ function updateOrder(orderId, fields) {
   const allowed = [
     'name', 'status', 'photo_path', 'material', 'color', 'size',
     'fulfillment_type', 'rush', 'cad_design', 'base_price', 'addons_price',
-    'shipping', 'total', 'craftcloud_cost', 'margin'
+    'shipping', 'total', 'craftcloud_cost', 'margin', 'stl_path', 'craftcloud_quote_id'
   ];
   const updates = [];
   const values = [];

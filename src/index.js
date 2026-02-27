@@ -4,6 +4,7 @@ const express = require('express');
 const path = require('path');
 const db = require('./db');
 const webhookRouter = require('./webhook');
+const pipeline = require('./pipeline');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -62,7 +63,7 @@ app.get('/api/orders/:orderId/messages', (req, res) => {
 app.post('/api/orders/:orderId/status', (req, res) => {
   try {
     const { status } = req.body;
-    const validStatuses = ['new', 'confirmed', 'in-progress', 'shipped', 'cancelled'];
+    const validStatuses = ['new', 'confirmed', 'in-progress', 'shipped', 'cancelled', 'error'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
@@ -74,20 +75,18 @@ app.post('/api/orders/:orderId/status', (req, res) => {
   }
 });
 
-// Craftcloud placeholder
-app.post('/api/orders/:orderId/craftcloud', (req, res) => {
-  const order = db.getOrder(req.params.orderId);
-  if (!order) return res.status(404).json({ error: 'Order not found' });
+// Run pipeline for an order
+app.post('/api/orders/:orderId/run-pipeline', async (req, res) => {
+  try {
+    const order = db.getOrder(req.params.orderId);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
 
-  // TODO: Replace with real Craftcloud API call
-  // const craftcloudResponse = await axios.post('https://api.craftcloud3d.com/v1/orders', {
-  //   api_key: process.env.CRAFTCLOUD_API_KEY,
-  //   stl_url: order.stl_url,
-  //   material: order.material,
-  //   ...
-  // });
-  console.log(`[CRAFTCLOUD] Placeholder — would send order ${order.order_id} to Craftcloud`);
-  res.json({ ok: true, message: 'Craftcloud integration pending' });
+    const result = await pipeline.runOrderPipeline(req.params.orderId);
+    res.json(result);
+  } catch (err) {
+    console.error('[API] run-pipeline error:', err);
+    res.status(500).json({ error: err.message || 'Pipeline failed' });
+  }
 });
 
 // --- Init & Start ---

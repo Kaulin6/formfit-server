@@ -117,6 +117,20 @@
     .status-in-progress { background: var(--blue); color: #fff; }
     .status-shipped    { background: var(--green); color: #000; }
     .status-cancelled  { background: var(--red); color: #fff; }
+    .status-error      { background: #dc2626; color: #fff; }
+
+    .btn-orange:disabled { opacity: 0.5; cursor: not-allowed; }
+    .spinner-inline {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #333;
+      border-top-color: var(--forge-orange);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Expanded order detail */
     .order-detail {
@@ -288,7 +302,8 @@
         'confirmed': 'status-confirmed',
         'in-progress': 'status-in-progress',
         'shipped': 'status-shipped',
-        'cancelled': 'status-cancelled'
+        'cancelled': 'status-cancelled',
+        'error': 'status-error'
       };
       return map[status] || 'status-new';
     }
@@ -342,11 +357,9 @@
                   <button class="btn btn-green" onclick="updateStatus(event, '${o.order_id}', 'shipped')">Mark as Shipped</button>
                   <button class="btn btn-red" onclick="updateStatus(event, '${o.order_id}', 'cancelled')">Cancel</button>
                 ` : ''}
+                <button class="btn btn-orange" id="pipeline-btn-${o.order_id}" onclick="runPipeline(event, '${o.order_id}')">Run Pipeline</button>
                 ${o.fulfillment_type === 'SELF' ? `
                   <a class="btn btn-orange" href="https://tooltrace.ai" target="_blank">Open in ToolTrace</a>
-                ` : ''}
-                ${o.fulfillment_type === 'CLOUD' ? `
-                  <button class="btn btn-orange" onclick="sendToCraftcloud(event, '${o.order_id}')">Send to Craftcloud</button>
                 ` : ''}
               </div>
               <div class="convo-log" id="convo-${o.order_id}">Loading conversation...</div>
@@ -411,11 +424,35 @@
       }
     }
 
-    function sendToCraftcloud(event, orderId) {
+    async function runPipeline(event, orderId) {
       event.stopPropagation();
-      console.log(`[CRAFTCLOUD] Would send order ${orderId} to Craftcloud API`);
-      // TODO: Integrate real Craftcloud API when key is available
-      alert(`Craftcloud integration pending. Order ${orderId} logged to console.`);
+      const btn = document.getElementById('pipeline-btn-' + orderId);
+      if (!btn) return;
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-inline"></span>Running...';
+      try {
+        const res = await fetch(`/api/orders/${orderId}/run-pipeline`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await res.json();
+        if (result.success) {
+          btn.textContent = 'Done';
+        } else {
+          btn.textContent = 'Failed';
+          console.error('[PIPELINE]', result.error);
+        }
+        loadData();
+      } catch (err) {
+        btn.textContent = 'Error';
+        console.error('Pipeline failed:', err);
+      } finally {
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = origText;
+        }, 3000);
+      }
     }
 
     function escapeHtml(text) {
